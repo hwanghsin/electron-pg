@@ -1,6 +1,8 @@
-const { app, BrowserWindow, Notification, ipcMain } = require("electron");
-// const path = require("path");
+const { app, BrowserWindow, Notification, Tray, ipcMain } = require("electron");
+const path = require("path");
 const { exec } = require("child_process");
+
+const assetsDirectory = path.join(__dirname, "assets");
 
 function checkNotifications() {
   exec(
@@ -62,6 +64,17 @@ const createWindow = () => {
   });
 
   win.loadFile("index.html");
+
+  const tray = new Tray(path.join(assetsDirectory, "profile.jpeg"));
+  tray.on("click", () => {
+    /* 點擊處理 */
+  });
+  tray.on("double-click", () => {
+    /* 雙擊處理 */
+  });
+  tray.on("right-click", () => {
+    /* 右鍵處理 */
+  });
 };
 
 app
