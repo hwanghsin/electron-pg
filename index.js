@@ -1,8 +1,18 @@
-const { app, BrowserWindow, Notification, Tray, ipcMain } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  Notification,
+  Tray,
+  ipcMain,
+} = require("electron");
 const path = require("path");
 const { exec } = require("child_process");
+const firstRun = require("electron-first-run");
 
 const assetsDirectory = path.join(__dirname, "assets");
+
+let progressbar;
 
 function checkNotifications() {
   exec(
@@ -54,8 +64,20 @@ const createWindow = () => {
   });
 
   ipcMain.on("NOTIFY", (event, arg) => {
-    new Notification({ title: "Notification", body: arg }).show();
+    try {
+      const notify = new Notification({ title: "Notification", body: arg });
+
+      notify.on("show", (event) => {
+        console.log("Notification show", event);
+      });
+
+      notify.show();
+    } catch (error) {
+      console.log(`Notification error: ${error}`);
+    }
   });
+
+  ipcMain.handle("TEST", async () => {});
 
   ipcMain.on("DEVICE", () => {
     const platform = process.platform;
@@ -63,11 +85,18 @@ const createWindow = () => {
     // openNotifySetting(platform);
   });
 
+  ipcMain.on("DOM-READY", (event, notifyState) => {
+    console.log("DOM-READY", notifyState);
+  });
+
   win.loadFile("index.html");
 
+  // 只有Windows和Linux有Tray
   const tray = new Tray(path.join(assetsDirectory, "profile.jpeg"));
   tray.on("click", () => {
     /* 點擊處理 */
+    win.show();
+    win.focus();
   });
   tray.on("double-click", () => {
     /* 雙擊處理 */
@@ -75,6 +104,47 @@ const createWindow = () => {
   tray.on("right-click", () => {
     /* 右鍵處理 */
   });
+  // 點右鍵時的選單
+  // tray.setContextMenu(null);
+
+  // 程式上方選單
+  // Menu.setApplicationMenu(null);
+  // 建立模板，回傳Menu物件
+  // Menu.buildFromTemplate(null);
+
+  // Mac Dock選單
+  const dockMenu = Menu.buildFromTemplate([
+    {
+      label: "New Window",
+      click() {
+        console.log("New Window");
+      },
+    },
+    {
+      label: "New Window with Settings",
+      submenu: [{ label: "Basic" }, { label: "Pro" }],
+    },
+    { label: "New Command..." },
+  ]);
+
+  if (process.platform === "darwin") {
+    app.dock.setMenu(dockMenu);
+  }
+
+  // 進度條
+  const increment = 0.03;
+  const delay = 100;
+
+  let progressTime = 0;
+  progressbar = setInterval(() => {
+    win.setProgressBar(progressTime);
+
+    if (progressTime < 2) {
+      progressTime += increment;
+    } else {
+      c = -increment * 5;
+    }
+  }, delay);
 };
 
 app
@@ -87,8 +157,8 @@ app
     });
   })
   .then(() => {
-    // checkNotifications();
-    // console.log("checkNotifications");
+    const isFirstRun = firstRun();
+    console.log("isFirstRun", isFirstRun);
     // const notification = new Notification({
     //   title: "Enable Notifications",
     //   body: "Notifications are disabled. Click here to enable them in system preferences.",
@@ -98,8 +168,13 @@ app
     //   const platform = process.platform;
     //   openNotifySetting(platform);
     // });
+    // notification.on("failed", (error) => {
+    //   console.error("Notification failed:", error);
+    // });
     // notification.show();
   });
+
+app.on("before-quit", () => clearInterval(progressbar));
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
