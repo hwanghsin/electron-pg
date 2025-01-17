@@ -5,10 +5,14 @@ const {
   Notification,
   Tray,
   ipcMain,
+  ipcRenderer,
 } = require("electron");
+const sharp = require("sharp");
 const path = require("path");
 const { exec } = require("child_process");
 const firstRun = require("electron-first-run");
+const { name } = require("platform");
+const packageJson = require("./package.json");
 
 const assetsDirectory = path.join(__dirname, "assets");
 
@@ -59,9 +63,9 @@ const createWindow = () => {
     console.log("message", message);
   });
 
-  ipcMain.handle("ASYNC_ACTION", async (event, message) => {
-    // async action
-  });
+  // ipcMain.handle("ASYNC_ACTION", async (event, message) => {
+  //   // async action
+  // });
 
   ipcMain.on("NOTIFY", (event, arg) => {
     try {
@@ -77,7 +81,7 @@ const createWindow = () => {
     }
   });
 
-  ipcMain.handle("TEST", async () => {});
+  // ipcMain.handle("TEST", async () => {});
 
   ipcMain.on("DEVICE", () => {
     const platform = process.platform;
@@ -87,6 +91,14 @@ const createWindow = () => {
 
   ipcMain.on("DOM-READY", (event, notifyState) => {
     console.log("DOM-READY", notifyState);
+  });
+
+  ipcMain.handle("IMAGE-QUALITY", async (event, { ab }) => {
+    const img = await sharp(ab);
+    const tmp = img.toFormat("png", { quality: 70 });
+    const buffer = await tmp.toBuffer();
+
+    ipcRenderer.invoke("IMAGE-QUALITY-RESULT", buffer);
   });
 
   win.loadFile("index.html");
@@ -132,19 +144,19 @@ const createWindow = () => {
   }
 
   // 進度條
-  const increment = 0.03;
-  const delay = 100;
+  // const increment = 0.03;
+  // const delay = 100;
 
-  let progressTime = 0;
-  progressbar = setInterval(() => {
-    win.setProgressBar(progressTime);
+  // let progressTime = 0;
+  // progressbar = setInterval(() => {
+  //   win.setProgressBar(progressTime);
 
-    if (progressTime < 2) {
-      progressTime += increment;
-    } else {
-      c = -increment * 5;
-    }
-  }, delay);
+  //   if (progressTime < 2) {
+  //     progressTime += increment;
+  //   } else {
+  //     c = -increment * 5;
+  //   }
+  // }, delay);
 };
 
 app
@@ -157,21 +169,25 @@ app
     });
   })
   .then(() => {
-    const isFirstRun = firstRun();
-    console.log("isFirstRun", isFirstRun);
-    // const notification = new Notification({
-    //   title: "Enable Notifications",
-    //   body: "Notifications are disabled. Click here to enable them in system preferences.",
-    //   actions: [{ type: "button", text: "Open Settings" }],
-    // });
-    // notification.on("action", () => {
-    //   const platform = process.platform;
-    //   openNotifySetting(platform);
-    // });
-    // notification.on("failed", (error) => {
-    //   console.error("Notification failed:", error);
-    // });
-    // notification.show();
+    const isFirstRun = firstRun({
+      name: packageJson.name,
+    });
+
+    if (isFirstRun) {
+      const notification = new Notification({
+        title: "Enable Notifications",
+        body: "Notifications are disabled. Click here to enable them in system preferences.",
+        actions: [{ type: "button", text: "Open Settings" }],
+      });
+      notification.on("action", () => {
+        const platform = process.platform;
+        openNotifySetting(platform);
+      });
+      notification.on("failed", (error) => {
+        console.error("Notification failed:", error);
+      });
+      notification.show();
+    }
   });
 
 app.on("before-quit", () => clearInterval(progressbar));
