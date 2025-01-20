@@ -5,7 +5,6 @@ const {
   Notification,
   Tray,
   ipcMain,
-  ipcRenderer,
 } = require("electron");
 const sharp = require("sharp");
 const path = require("path");
@@ -48,14 +47,14 @@ const openNotifySetting = (device = "darwin") => {
   );
 };
 
-const createWindow = () => {
+const createWindow = async () => {
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1000,
+    height: 800,
     webPreferences: {
-      // preload: path.join(__dirname, "preload.js"),
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   });
 
@@ -81,7 +80,11 @@ const createWindow = () => {
     }
   });
 
-  // ipcMain.handle("TEST", async () => {});
+  ipcMain.handle("TEST", async () => {
+    const result = await Promise.resolve("Hello from main process");
+
+    console.log("TEST", result);
+  });
 
   ipcMain.on("DEVICE", () => {
     const platform = process.platform;
@@ -95,13 +98,16 @@ const createWindow = () => {
 
   ipcMain.handle("IMAGE-QUALITY", async (event, { ab }) => {
     const img = await sharp(ab);
-    const tmp = img.toFormat("png", { quality: 70 });
-    const buffer = await tmp.toBuffer();
+    const tmp = img.png({ compressionLevel: 9 });
 
-    ipcRenderer.invoke("IMAGE-QUALITY-RESULT", buffer);
+    return await tmp.toBuffer();
+
+    // const buffer = await tmp.toBuffer();
+    // console.log("buffer", { buffer });
+    // event.sender.send("IMAGE-QUALITY-RESULT", buffer);
   });
 
-  win.loadFile("index.html");
+  await win.loadFile("index.html");
 
   // 只有Windows和Linux有Tray
   const tray = new Tray(path.join(assetsDirectory, "profile.jpeg"));
@@ -165,7 +171,7 @@ app
     createWindow();
 
     app.on("activate", () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+      if (BrowserWindow.getAllWindows().length === 0) return createWindow();
     });
   })
   .then(() => {

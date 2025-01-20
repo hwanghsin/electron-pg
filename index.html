@@ -10,20 +10,30 @@
     <title>Electron Playground</title>
   </head>
   <body>
-    <h1>功能</h1>
+    <!-- <h1>功能</h1> -->
 
+    <p>
+      We are using Node.js <span id="node-version"></span>, Chromium
+      <span id="chrome-version"></span>, and Electron
+      <span id="electron-version"></span>.
+    </p>
     <!-- <form id="notify">
       <button>通知</button>
     </form> -->
     <!-- <form id="device">
       <button>裝置</button>
     </form> -->
-    <form id="test">
+    <!-- <form id="test">
       <button>測試</button>
-    </form>
+    </form> -->
     <form id="image-quality">
-      <button>圖片</button>
+      <button>解析度</button>
     </form>
+
+    <div style="display: flex">
+      <img src="./assets/test.PNG" style="max-width: 400px" />
+      <img id="reslution" style="display: none" />
+    </div>
   </body>
 
   <script src="./renderer.js"></script>

@@ -1,23 +1,17 @@
-const ipcRenderer = require("electron").ipcRenderer;
-const ipcMain = require("electron").ipcMain;
 const test = document.getElementById("test");
 const notify = document.getElementById("notify");
 const device = document.getElementById("device");
 const quality = document.getElementById("image-quality");
 
 window.addEventListener("DOMContentLoaded", () => {
-  const notifyState = localStorage.getItem("notifyState");
-  // ipcRenderer.send("DOM-READY", notifyState);
-
-  ipcMain.handle("IMAGE-QUALITY-RESULT", (event, buffer) => {
-    console.log("IMAGE-QUALITY-RESULT", buffer);
-  });
+  // const notifyState = localStorage.getItem("notifyState");
+  // window.electronAPI.send("DOM-READY", notifyState);
 });
 
 notify?.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  ipcRenderer.send("NOTIFY", "Hello from electron");
+  // window.electronAPI.send("NOTIFY", "Hello from electron");
   // web端的Notification API
 
   // console.log(Notification.permission);
@@ -34,17 +28,16 @@ notify?.addEventListener("submit", (event) => {
   // };
 });
 
-device?.addEventListener("submit", (event) => {
+// device?.addEventListener("submit", (event) => {
+//   event.preventDefault();
+
+//   window.electronAPI.send("DEVICE");
+// });
+
+test?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  // console.log(Notification.permission);
-  ipcRenderer.send("DEVICE");
-});
-
-test?.addEventListener("submit", (event) => {
-  event.preventDefault();
-
-  ipcRenderer.invoke("TEST");
+  await window.electronAPI.invoke("TEST");
 });
 
 quality?.addEventListener("submit", async (event) => {
@@ -53,6 +46,35 @@ quality?.addEventListener("submit", async (event) => {
   const res = await fetch("./assets/test.PNG");
   const ab = await res.arrayBuffer();
 
-  console.log("quality", { ab, ipcRenderer });
-  // await ipcRenderer.invoke("IMAGE-QUALITY", { ab });
+  const buffer = await window.electronAPI.invoke("IMAGE-QUALITY", { ab });
+
+  const img = document.getElementById("reslution");
+
+  // const blob = new Blob([buffer], { type: "image/png" });
+  // const file = new File([blob], "test_compress.png", { type: "image/png" });
+
+  const imageUrl = URL.createObjectURL(blob);
+
+  img.src = imageUrl;
+  img.style.maxWidth = "400px";
+  img.style.display = "block";
+
+  // const original = new Blob([ab], { type: "image/png" });
+  // const originalFile = new File([original], "original.png", {
+  //   type: "image/png",
+  // });
+
+  // window.electronAPI.on("IMAGE-QUALITY-RESULT", (event, buffer) => {
+  //   const img = document.getElementById("reslution");
+
+  //   const blob = new Blob([buffer], { type: "image/png" });
+  //   const file = new File([blob], "test_compress.png", { type: "image/png" });
+  //   console.log("file", file);
+
+  //   const imageUrl = URL.createObjectURL(blob);
+
+  //   img.src = imageUrl;
+  //   img.style.maxWidth = "400px";
+  //   img.style.display = "block";
+  // });
 });
