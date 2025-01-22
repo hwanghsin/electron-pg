@@ -5,6 +5,7 @@ const {
   Notification,
   Tray,
   ipcMain,
+  globalShortcut,
 } = require("electron");
 const sharp = require("sharp");
 const path = require("path");
@@ -173,6 +174,17 @@ app
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) return createWindow();
     });
+
+    globalShortcut.register("CommandOrControl+D", () => {
+      app.quit();
+    });
+
+    globalShortcut.register("CommandOrControl+Y", () => {
+      new Notification({
+        title: "CommandOrControl+Y",
+        body: "Control and Y keys are pressed",
+      }).show();
+    });
   })
   .then(() => {
     const isFirstRun = firstRun({
@@ -196,7 +208,7 @@ app
     }
   });
 
-app.on("before-quit", () => clearInterval(progressbar));
+// app.on("before-quit", () => clearInterval(progressbar));
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
